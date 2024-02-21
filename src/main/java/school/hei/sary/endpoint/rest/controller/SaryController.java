@@ -2,35 +2,30 @@ package school.hei.sary.endpoint.rest.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import school.hei.sary.file.BucketComponent;
+import school.hei.sary.service.SaryService;
 
 @AllArgsConstructor
 @RestController
 public class SaryController {
   BucketComponent bucketComponent;
 
+  SaryService saryService;
+
   @PutMapping("/sary/{bucketKey}")
   public ResponseEntity<String> uploadSary(
-      @RequestPart(value = "file") MultipartFile file, @PathVariable String bucketKey) {
-    try {
-      File convFile = convertMultipartFileToFile(file);
-      bucketComponent.upload(convFile, bucketKey);
-      return ResponseEntity.ok("Success");
-    } catch (IOException e) {
-      return ResponseEntity.status(500).body("Error uploading file: " + e.getMessage());
-    }
+      @RequestPart(value = "file") MultipartFile file, @PathVariable String bucketKey)
+      throws IOException {
+    File convFile = convertMultiPartToFile(file);
+    bucketComponent.upload(convFile, bucketKey);
+    return ResponseEntity.ok("Success");
   }
 
-  private File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException {
-    Path tempFile = Files.createTempFile("temp-file", null);
-    Files.copy(multipartFile.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-    return tempFile.toFile();
+  private File convertMultiPartToFile(MultipartFile multipartFilefile) throws IOException {
+    return saryService.convertMultipartFileToFile(multipartFilefile);
   }
 }
