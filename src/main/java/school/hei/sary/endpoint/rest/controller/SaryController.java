@@ -3,39 +3,36 @@ package school.hei.sary.endpoint.rest.controller;
 import java.io.File;
 import java.net.URL;
 import java.time.Duration;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import school.hei.sary.file.BucketComponent;
-import school.hei.sary.file.FileHash;
 
 @RestController
 public class SaryController {
-  private final BucketComponent bucketComponent;
+  BucketComponent bucketComponent;
 
-  public SaryController(BucketComponent bucketComponent) {
-    this.bucketComponent = bucketComponent;
-  }
-
-  @PutMapping("/sary/")
-  public ResponseEntity<?> uploadFile(
+  @PutMapping("/blacks")
+  public ResponseEntity<String> uploadFile(
       @RequestParam("file") File file, @RequestParam("bucketKey") String bucketKey) {
     try {
-      FileHash fileHash = bucketComponent.upload(file, bucketKey);
-      return ResponseEntity.ok(fileHash);
+      URL presignedURL = bucketComponent.presign(bucketKey, Duration.ofMinutes(10));
+      bucketKey = presignedURL.toString();
+      bucketComponent.upload(file, bucketKey);
+      return ResponseEntity.ok("File uploaded successfully");
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+      return ResponseEntity.status(500).body("Error uploading file: " + e.getMessage());
     }
   }
 
-  @GetMapping("/sary/{bucketKey}")
-  public ResponseEntity<?> downloadFile(@PathVariable String bucketKey) {
+  @GetMapping("/blacks/{bucketKey}")
+  public ResponseEntity<File> downloadFile(@PathVariable String bucketKey) {
     try {
-      URL presignedUrl =
-          bucketComponent.presign(bucketKey, Duration.ofMinutes(10)); // Adjust expiration as needed
-      return ResponseEntity.ok(presignedUrl);
+      URL presignedURL = bucketComponent.presign(bucketKey, Duration.ofMinutes(10));
+      bucketKey = presignedURL.toString();
+      File downloadedFile = bucketComponent.download(bucketKey);
+      return ResponseEntity.ok(downloadedFile);
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+      return ResponseEntity.status(500).body(null);
     }
   }
 }
